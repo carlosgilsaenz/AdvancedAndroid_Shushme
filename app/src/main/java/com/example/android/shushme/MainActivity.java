@@ -16,19 +16,66 @@ package com.example.android.shushme;
 * limitations under the License.
 */
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.nfc.Tag;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.places.Places;
 
-    // Constants
-    public static final String TAG = MainActivity.class.getSimpleName();
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+import timber.log.Timber;
+
+public class MainActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener,GoogleApiClient.ConnectionCallbacks{
 
     // Member variables
     private PlaceListAdapter mAdapter;
     private RecyclerView mRecyclerView;
+
+    //  GoogleApiClient
+    private GoogleApiClient mGoogleAPIClient;
+
+    //String Constrant
+    private static final String PERMISSIONS_STRING[] = {android.Manifest.permission.ACCESS_FINE_LOCATION};
+    //Request Code
+    private static final int PERMISSIONS_REQUEST_CODE = 101;
+
+    // TODO (8) Implement onLocationPermissionClicked to handle the CheckBox click event
+    @OnClick(R.id.enable_location)
+    public void onLocationPermissionClicked(CheckBox checkbox){
+        if(!checkbox.isChecked()){
+            ActivityCompat.requestPermissions(this,
+                    PERMISSIONS_STRING, PERMISSIONS_REQUEST_CODE);
+        }
+        Timber.d("Checkbox clicked");
+    }
+
+    // TODO (9) Implement the Add Place Button click event to show  a toast message with the permission status
+    @OnClick(R.id.add_location)
+    public void onAddNewLocationClicked(Button button) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            Timber.d("Permissions ACCESS_FINE_LOCATION Enabled");
+            Toast.makeText(this,"Permissions ACCESS_FINE_LOCATION Enabled",Toast.LENGTH_SHORT).show();
+        }else{
+            Timber.d("Permissions ACCESS_FINE_LOCATION Disabled");
+            Toast.makeText(this,"Permissions ACCESS_FINE_LOCATION Disabled",Toast.LENGTH_SHORT).show();
+        }
+    }
 
     /**
      * Called when the activity is starting
@@ -47,11 +94,47 @@ public class MainActivity extends AppCompatActivity {
         mRecyclerView.setAdapter(mAdapter);
 
         // TODO (4) Create a GoogleApiClient with the LocationServices API and GEO_DATA_API
+        mGoogleAPIClient = new GoogleApiClient.
+                Builder(this).
+                addApi(Places.GEO_DATA_API).
+                addApi(Places.PLACE_DETECTION_API).
+                addConnectionCallbacks(this).
+                addOnConnectionFailedListener(this).
+                build();
+
+        Timber.plant(new Timber.DebugTree());
+
+        ButterKnife.bind(this);
     }
 
     // TODO (5) Override onConnected, onConnectionSuspended and onConnectionFailed for GoogleApiClient
-    // TODO (7) Override onResume and inside it initialize the location permissions checkbox
-    // TODO (8) Implement onLocationPermissionClicked to handle the CheckBox click event
-    // TODO (9) Implement the Add Place Button click event to show  a toast message with the permission status
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        Timber.e("Google API: Connection Failed");
+    }
 
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        Timber.d("Google API: Connection Successful");
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        Timber.d("Google API:  Connection Suspended");
+    }
+
+    // TODO (7) Override onResume and inside it initialize the location permissions checkbox
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        CheckBox checkBox = (CheckBox) findViewById(R.id.enable_location);
+
+        if(ActivityCompat.checkSelfPermission(MainActivity.this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,PERMISSIONS_STRING,PERMISSIONS_REQUEST_CODE);
+        }else{
+            checkBox.setChecked(true);
+        }
+    }
 }
