@@ -16,6 +16,7 @@ package com.example.android.shushme;
 * limitations under the License.
 */
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -23,18 +24,23 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.PlaceBuffer;
+
 public class PlaceListAdapter extends RecyclerView.Adapter<PlaceListAdapter.PlaceViewHolder> {
 
     private Context mContext;
+    private PlaceBuffer mPlaces;
 
     /**
      * Constructor using the context and the db cursor
      *
      * @param context the calling context/activity
      */
-    public PlaceListAdapter(Context context) {
+    public PlaceListAdapter(Context context, PlaceBuffer places) {
         // TODO (4) Take a PlaceBuffer as an input and store it as a local private member mPlaces
         this.mContext = context;
+        mPlaces = places;
     }
 
     /**
@@ -62,9 +68,17 @@ public class PlaceListAdapter extends RecyclerView.Adapter<PlaceListAdapter.Plac
     public void onBindViewHolder(PlaceViewHolder holder, int position) {
         // TODO (6) Implement onBindViewHolder to set the view holder's Name and Address text fields
         // from the Place object at the specified position in mPlaces
+        Place place = mPlaces.get(position);
+
+        holder.nameTextView.setText(place.getName());
+        holder.addressTextView.setText(place.getAddress());
     }
 
     //TODO (7) Implement a public method swapPlaces that replaces the current mPlaces PlaceBuffer with a new one
+    public void swapPlaces(PlaceBuffer places){
+        mPlaces = places;
+        notifyDataSetChanged();
+    }
 
     /**
      * Returns the number of items in the cursor
@@ -74,7 +88,10 @@ public class PlaceListAdapter extends RecyclerView.Adapter<PlaceListAdapter.Plac
     @Override
     public int getItemCount() {
         // TODO (5) Update getItemCount to return mPlaces's item count
-        return 0;
+
+        if(mPlaces == null) return 0;
+
+        return mPlaces.getCount();
     }
 
     /**
