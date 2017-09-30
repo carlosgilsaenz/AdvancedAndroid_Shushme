@@ -16,14 +16,25 @@ package com.example.android.shushme;
 * limitations under the License.
 */
 
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
+import android.media.AudioManager;
+import android.os.Build;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+
+import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingEvent;
 
 public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
+    // Constants
     public static final String TAG = GeofenceBroadcastReceiver.class.getSimpleName();
+    public static final int mNotificationID = 001;
+
 
     /***
      * Handles the Broadcast message sent when the Geofence Transition is triggered
@@ -37,12 +48,60 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         Log.i(TAG, "onReceive called");
         // TODO (4) Use GeofencingEvent.fromIntent to retrieve the GeofencingEvent that caused the transition
-
+        GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
         // TODO (5) Call getGeofenceTransition to get the transition type and use AudioManager to set the
         // phone ringer mode based on the transition type. Feel free to create a helper method (setRingerMode)
+        if(geofencingEvent.hasError()){
+            String errorMessage = String.format("Error : %s", geofencingEvent.getErrorCode());
+            Log.e(TAG,errorMessage);
+        }
+
+        int geofenceTransition = geofencingEvent.getGeofenceTransition();
+
+        if(geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER){
+            setRingerMode(context, AudioManager.RINGER_MODE_SILENT);
+        }else if(geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT){
+            setRingerMode(context, AudioManager.RINGER_MODE_NORMAL);
+        } else{
+            String errorMessage = String.format("Invalid Geofence Transitions : %d", geofenceTransition);
+            Log.e(TAG,errorMessage);
+        }
 
         // TODO (6) Show a notification to alert the user that the ringer mode has changed.
         // Feel free to create a helper method (sendNotification)
+        sendNotification(context,geofenceTransition);
+    }
 
+    private void setRingerMode(Context context, int ringerMode){
+        NotificationManager nm = (NotificationManager) context.getSystemService(context.NOTIFICATION_SERVICE);
+
+        if(Build.VERSION.SDK_INT < 24 ||
+                (Build.VERSION.SDK_INT >= 24 && !nm.isNotificationPolicyAccessGranted())){
+            AudioManager am = (AudioManager) context.getSystemService(context.AUDIO_SERVICE);
+            am.setRingerMode(ringerMode);
+        }
+    }
+
+    private void sendNotification(Context context, int transitionType){
+
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(context);
+
+        if(transitionType == Geofence.GEOFENCE_TRANSITION_ENTER){
+            builder.setSmallIcon(R.drawable.ic_volume_off_white_24dp).
+                    setLargeIcon(BitmapFactory.decodeResource(context.getResources(),
+                            R.drawable.ic_volume_off_white_24dp)).
+                    setContentTitle(context.getString(R.string.silent_mode));
+        } else if(transitionType == Geofence.GEOFENCE_TRANSITION_EXIT){
+            builder.setSmallIcon(R.drawable.ic_volume_up_white_24dp).
+                    setLargeIcon(BitmapFactory.decodeResource(context.getResources(),
+                            R.drawable.ic_volume_up_white_24dp)).
+                    setContentTitle(context.getString(R.string.normal_mode));
+        }
+
+        NotificationManager nm =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        nm.notify(mNotificationID,builder.build());
     }
 }
