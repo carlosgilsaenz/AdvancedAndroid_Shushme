@@ -12,5 +12,6 @@
     <string name="privacy">http://www.google.com/policies/privacy</string>
     <string name="silent_mode">Phone on Silent</string>
     <string name="normal_mode">Phone on Normals</string>
+    <string name="touch_to_relaunch">Touch to launch the app.</string>
 
 </resources>

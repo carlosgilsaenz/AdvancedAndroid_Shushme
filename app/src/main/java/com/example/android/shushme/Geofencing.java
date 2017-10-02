@@ -110,7 +110,6 @@ public class Geofencing implements ResultCallback {
      * @param places the PlaceBuffer result of the getPlaceById call
      */
     public void updateGeofencesList(PlaceBuffer places) {
-        mGeofenceList = new ArrayList<>();
         if (places == null || places.getCount() == 0) return;
         for (Place place : places) {
             // Read the place information from the DB cursor
@@ -137,7 +136,7 @@ public class Geofencing implements ResultCallback {
      */
     private GeofencingRequest getGeofencingRequest() {
         GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
-        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
+        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_DWELL);
         builder.addGeofences(mGeofenceList);
         return builder.build();
     }
